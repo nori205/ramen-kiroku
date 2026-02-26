@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🍜 ラーメン記録</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===== ヘッダー ===== -->
+  <header class="app-header">
+    <div class="header-inner">
+      <h1 class="app-title">🍜 ラーメン記録</h1>
+      <div class="realtime-indicator">
+        <span class="indicator-dot"></span>
+        <span class="indicator-text">リアルタイム共有中</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== タブナビ ===== -->
+  <nav class="tab-nav" role="tablist">
+    <button class="tab-btn active" data-tab="list" role="tab" aria-selected="true">
+      📋 一覧
+    </button>
+    <button class="tab-btn" data-tab="form" role="tab" aria-selected="false">
+      ✏️ 新規投稿
+    </button>
+  </nav>
+
+  <!-- ===== 一覧タブ ===== -->
+  <div id="tab-list" class="tab-panel active">
+
+    <!-- 検索 -->
+    <div class="search-section">
+      <div class="search-row">
+        <select id="filter-prefecture" class="search-select">
+          <option value="">都道府県を選択</option>
+        </select>
+        <input type="text" id="filter-city" class="search-input" placeholder="市町村で絞り込み">
+      </div>
+      <div class="search-actions">
+        <button class="btn btn-primary" id="search-btn">🔍 検索</button>
+        <button class="btn btn-ghost" id="reset-btn">リセット</button>
+      </div>
+    </div>
+
+    <div class="records-info" id="records-info"></div>
+
+    <div id="ramen-list" class="ramen-list">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>読み込み中...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 新規投稿タブ ===== -->
+  <div id="tab-form" class="tab-panel">
+    <div class="form-container">
+      <h2 class="form-heading">📝 新規ラーメン記録</h2>
+      <form id="ramen-form" novalidate>
+
+        <div class="form-group">
+          <label class="form-label" for="f-date">📅 食べた日付 <span class="required">*</span></label>
+          <input type="date" id="f-date" class="form-control" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="f-prefecture">🗾 都道府県 <span class="required">*</span></label>
+            <select id="f-prefecture" class="form-control" required>
+              <option value="">選択</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="f-city">🏘️ 市町村 <span class="required">*</span></label>
+            <input type="text" id="f-city" class="form-control" placeholder="例: 新宿区" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="f-shop-name">🏪 店名 <span class="required">*</span></label>
+          <input type="text" id="f-shop-name" class="form-control" placeholder="例: 一蘭" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="f-ramen-type">🍜 ラーメンの種類</label>
+          <select id="f-ramen-type" class="form-control">
+            <option value="">選択してください</option>
+            <option value="醤油">醤油ラーメン</option>
+            <option value="塩">塩ラーメン</option>
+            <option value="味噌">味噌ラーメン</option>
+            <option value="豚骨">豚骨ラーメン</option>
+            <option value="つけ麺">つけ麺</option>
+            <option value="担々麺">担々麺</option>
+            <option value="二郎系">二郎系</option>
+            <option value="家系">家系</option>
+            <option value="その他">その他</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🍽️ メニューと金額（最大3つ）</label>
+          <div class="menu-grid">
+            <div class="menu-row-header">
+              <span>メニュー名</span>
+              <span>金額（円）</span>
+            </div>
+            <div class="menu-row">
+              <input type="text" class="form-control menu-name" placeholder="例: 特製醤油ラーメン">
+              <div class="price-input">
+                <span class="yen-symbol">¥</span>
+                <input type="number" class="form-control menu-price" placeholder="1000" min="0">
+              </div>
+            </div>
+            <div class="menu-row">
+              <input type="text" class="form-control menu-name" placeholder="例: 替え玉">
+              <div class="price-input">
+                <span class="yen-symbol">¥</span>
+                <input type="number" class="form-control menu-price" placeholder="150" min="0">
+              </div>
+            </div>
+            <div class="menu-row">
+              <input type="text" class="form-control menu-name" placeholder="例: 餃子">
+              <div class="price-input">
+                <span class="yen-symbol">¥</span>
+                <input type="number" class="form-control menu-price" placeholder="400" min="0">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="f-hours">⏰ 営業時間</label>
+            <input type="text" id="f-hours" class="form-control" placeholder="例: 11:00〜23:00">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="f-holidays">🚫 定休日</label>
+            <input type="text" id="f-holidays" class="form-control" placeholder="例: 月曜日">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="f-links">🔗 お店のリンク</label>
+          <textarea id="f-links" class="form-control" rows="3"
+            placeholder="GoogleマップやInstagramのURLを1行ずつ入力&#10;例: https://maps.google.com/...&#10;例: https://www.instagram.com/..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="f-notes">📝 全体的な感想</label>
+          <textarea id="f-notes" class="form-control" rows="4"
+            placeholder="スープの濃さ、麺の硬さ、接客など何でも"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">⭐ 評価</label>
+          <div class="star-input" id="f-star-input"></div>
+          <input type="hidden" id="f-rating" value="3">
+          <div class="rating-label" id="f-rating-label">★★★（普通）</div>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="f-want-to-return" class="checkbox-input">
+            <span class="checkbox-custom"></span>
+            また行きたい！🍜
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-large">
+          💾 記録を保存する
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== 編集モーダル ===== -->
+  <div id="edit-modal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">✏️ 記録を編集</h2>
+        <button class="modal-close-btn" id="modal-close-btn" aria-label="閉じる">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="edit-form" novalidate>
+
+          <div class="form-group">
+            <label class="form-label" for="e-date">📅 食べた日付 <span class="required">*</span></label>
+            <input type="date" id="e-date" class="form-control" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="e-prefecture">🗾 都道府県 <span class="required">*</span></label>
+              <select id="e-prefecture" class="form-control" required>
+                <option value="">選択</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="e-city">🏘️ 市町村 <span class="required">*</span></label>
+              <input type="text" id="e-city" class="form-control" placeholder="例: 新宿区" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="e-shop-name">🏪 店名 <span class="required">*</span></label>
+            <input type="text" id="e-shop-name" class="form-control" placeholder="例: 一蘭" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="e-ramen-type">🍜 ラーメンの種類</label>
+            <select id="e-ramen-type" class="form-control">
+              <option value="">選択してください</option>
+              <option value="醤油">醤油ラーメン</option>
+              <option value="塩">塩ラーメン</option>
+              <option value="味噌">味噌ラーメン</option>
+              <option value="豚骨">豚骨ラーメン</option>
+              <option value="つけ麺">つけ麺</option>
+              <option value="担々麺">担々麺</option>
+              <option value="二郎系">二郎系</option>
+              <option value="家系">家系</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">🍽️ メニューと金額</label>
+            <div class="menu-grid">
+              <div class="menu-row-header">
+                <span>メニュー名</span>
+                <span>金額（円）</span>
+              </div>
+              <div class="menu-row">
+                <input type="text" class="form-control menu-name" placeholder="例: 特製醤油ラーメン">
+                <div class="price-input">
+                  <span class="yen-symbol">¥</span>
+                  <input type="number" class="form-control menu-price" placeholder="1000" min="0">
+                </div>
+              </div>
+              <div class="menu-row">
+                <input type="text" class="form-control menu-name" placeholder="例: 替え玉">
+                <div class="price-input">
+                  <span class="yen-symbol">¥</span>
+                  <input type="number" class="form-control menu-price" placeholder="150" min="0">
+                </div>
+              </div>
+              <div class="menu-row">
+                <input type="text" class="form-control menu-name" placeholder="例: 餃子">
+                <div class="price-input">
+                  <span class="yen-symbol">¥</span>
+                  <input type="number" class="form-control menu-price" placeholder="400" min="0">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="e-hours">⏰ 営業時間</label>
+              <input type="text" id="e-hours" class="form-control" placeholder="例: 11:00〜23:00">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="e-holidays">🚫 定休日</label>
+              <input type="text" id="e-holidays" class="form-control" placeholder="例: 月曜日">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="e-links">🔗 お店のリンク</label>
+            <textarea id="e-links" class="form-control" rows="3" placeholder="URLを1行ずつ入力"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="e-notes">📝 全体的な感想</label>
+            <textarea id="e-notes" class="form-control" rows="4"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">⭐ 評価</label>
+            <div class="star-input" id="e-star-input"></div>
+            <input type="hidden" id="e-rating" value="3">
+            <div class="rating-label" id="e-rating-label">★★★（普通）</div>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="e-want-to-return" class="checkbox-input">
+              <span class="checkbox-custom"></span>
+              また行きたい！🍜
+            </label>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="modal-cancel-btn">キャンセル</button>
+            <button type="submit" class="btn btn-primary">💾 更新する</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== トースト通知 ===== -->
+  <div id="toast" class="toast hidden" role="alert" aria-live="polite"></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
