@@ -86,6 +86,22 @@
         </div>
 
         <div class="form-group">
+          <label class="form-label">📷 写真</label>
+          <div class="photo-upload-area">
+            <input type="file" id="f-photo" class="photo-file-input" accept="image/*">
+            <label for="f-photo" class="photo-upload-label" id="f-photo-placeholder">
+              <span class="photo-upload-icon">📷</span>
+              <span class="photo-upload-text">写真を追加</span>
+              <span class="photo-upload-hint">800px・JPEG70%に自動圧縮</span>
+            </label>
+            <div class="photo-preview-wrap hidden" id="f-photo-preview-wrap">
+              <img id="f-photo-preview" class="photo-preview-img" alt="プレビュー">
+              <button type="button" class="photo-remove-btn" id="f-photo-remove">✕ 削除</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
           <label class="form-label" for="f-ramen-type">🍜 ラーメンの種類</label>
           <select id="f-ramen-type" class="form-control">
             <option value="">選択してください</option>
@@ -208,6 +224,22 @@
           <div class="form-group">
             <label class="form-label" for="e-shop-name">🏪 店名 <span class="required">*</span></label>
             <input type="text" id="e-shop-name" class="form-control" placeholder="例: 一蘭" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">📷 写真</label>
+            <div class="photo-upload-area">
+              <input type="file" id="e-photo" class="photo-file-input" accept="image/*">
+              <label for="e-photo" class="photo-upload-label" id="e-photo-placeholder">
+                <span class="photo-upload-icon">📷</span>
+                <span class="photo-upload-text">写真を追加・変更</span>
+                <span class="photo-upload-hint">800px・JPEG70%に自動圧縮</span>
+              </label>
+              <div class="photo-preview-wrap hidden" id="e-photo-preview-wrap">
+                <img id="e-photo-preview" class="photo-preview-img" alt="プレビュー">
+                <button type="button" class="photo-remove-btn" id="e-photo-remove">✕ 削除</button>
+              </div>
+            </div>
           </div>
 
           <div class="form-group">

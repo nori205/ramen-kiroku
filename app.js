@@ -70,6 +70,12 @@ let allRecords = [];
 let editingDocId = null;
 let unsubscribe = null;
 
+// 写真データURL（圧縮後のbase64）
+let newFormPhotoUrl = null;
+let editFormPhotoUrl = null;
+let newPhotoController = null;
+let editPhotoController = null;
+
 // ============================================================
 // 初期化
 // ============================================================
@@ -99,7 +105,7 @@ function initApp() {
   initStarRating('f-star-input', 'f-rating', 'f-rating-label', 3);
   initStarRating('e-star-input', 'e-rating', 'e-rating-label', 3);
 
-  // イベントリスナー設定
+  // イベントリスナー設定（写真コントローラーも初期化される）
   setupEventListeners();
 
   // Firestoreリアルタイムリスナー開始
@@ -151,6 +157,16 @@ function setupEventListeners() {
   document.getElementById('edit-modal').addEventListener('click', e => {
     if (e.target === document.getElementById('edit-modal')) closeEditModal();
   });
+
+  // 写真入力セットアップ
+  newPhotoController = setupPhotoInput(
+    'f-photo', 'f-photo-placeholder', 'f-photo-preview-wrap', 'f-photo-preview', 'f-photo-remove',
+    url => { newFormPhotoUrl = url; }
+  );
+  editPhotoController = setupPhotoInput(
+    'e-photo', 'e-photo-placeholder', 'e-photo-preview-wrap', 'e-photo-preview', 'e-photo-remove',
+    url => { editFormPhotoUrl = url; }
+  );
 
   // カードのアクションボタン（イベント委譲）
   document.getElementById('ramen-list').addEventListener('click', e => {
@@ -221,6 +237,13 @@ function renderCard(record) {
     `<span class="star-display ${i + 1 <= (record.rating || 0) ? 'filled' : 'empty'}">★</span>`
   ).join('');
 
+  // 写真サムネイル（data:image/... のみ許可してXSSを防止）
+  const safeSrc = record.photoDataUrl && /^data:image\/(jpeg|png|gif|webp)/.test(record.photoDataUrl)
+    ? record.photoDataUrl : null;
+  const photoHtml = safeSrc
+    ? `<div class="card-photo"><img src="${safeSrc}" alt="${esc(record.shopName || '')}のラーメン写真" loading="lazy"></div>`
+    : '';
+
   const menus = (record.menus || []).filter(m => m && m.name);
   const menuHtml = menus.length > 0
     ? `<div class="card-menus">${menus.map(m =>
@@ -241,6 +264,7 @@ function renderCard(record) {
 
   return `
     <div class="ramen-card">
+      ${photoHtml}
       <div class="card-header">
         <div class="card-title-row">
           <h3 class="card-shop-name">${esc(record.shopName || '')}</h3>
@@ -337,6 +361,7 @@ async function handleFormSubmit(e) {
   try {
     await addDoc(collection(db, COLLECTION), {
       ...getFormData('f'),
+      photoDataUrl: newFormPhotoUrl,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -349,6 +374,9 @@ async function handleFormSubmit(e) {
     // スター評価をリセット
     const starEl = document.getElementById('f-star-input');
     if (starEl._setRating) starEl._setRating(3);
+    // 写真をリセット
+    newFormPhotoUrl = null;
+    if (newPhotoController) newPhotoController.clear();
 
     switchTab('list');
   } catch (err) {
@@ -374,6 +402,7 @@ async function handleEditSubmit(e) {
   try {
     await updateDoc(doc(db, COLLECTION, editingDocId), {
       ...getFormData('e'),
+      photoDataUrl: editFormPhotoUrl,
       updatedAt: serverTimestamp(),
     });
 
@@ -465,6 +494,10 @@ function openEditModal(id) {
   const starEl = document.getElementById('e-star-input');
   if (starEl._setRating) starEl._setRating(record.rating || 3);
 
+  // 写真を設定
+  editFormPhotoUrl = record.photoDataUrl || null;
+  if (editPhotoController) editPhotoController.set(editFormPhotoUrl);
+
   // モーダルを表示
   document.getElementById('edit-modal').classList.remove('hidden');
   document.body.style.overflow = 'hidden';
@@ -477,6 +510,7 @@ function closeEditModal() {
   document.getElementById('edit-modal').classList.add('hidden');
   document.body.style.overflow = '';
   editingDocId = null;
+  editFormPhotoUrl = null;
 }
 
 // ============================================================
@@ -572,6 +606,86 @@ function populatePrefectures(selectId) {
     opt.textContent = pref;
     sel.appendChild(opt);
   });
+}
+
+// ============================================================
+// 写真圧縮・アップロード UI
+// ============================================================
+
+// Canvas APIで最大800px・JPEG70%に圧縮してData URLを返す
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('ファイル読み込み失敗'));
+    reader.onload = e => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('画像解析失敗'));
+      img.onload = () => {
+        const MAX = 800;
+        let w = img.width;
+        let h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// 写真入力UIをセットアップし、コントローラーオブジェクトを返す
+function setupPhotoInput(inputId, placeholderId, previewWrapId, previewImgId, removeBtnId, onPhotoChange) {
+  const input       = document.getElementById(inputId);
+  const placeholder = document.getElementById(placeholderId);
+  const previewWrap = document.getElementById(previewWrapId);
+  const previewImg  = document.getElementById(previewImgId);
+  const removeBtn   = document.getElementById(removeBtnId);
+
+  function showPreview(dataUrl) {
+    previewImg.src = dataUrl;
+    previewWrap.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  }
+
+  function clearPreview() {
+    previewImg.src = '';
+    previewWrap.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+    input.value = '';
+  }
+
+  input.addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    input.value = '';
+    try {
+      const dataUrl = await compressImage(file);
+      showPreview(dataUrl);
+      onPhotoChange(dataUrl);
+    } catch (err) {
+      console.error('画像圧縮エラー:', err);
+      showToast('画像の処理に失敗しました', 'error');
+      clearPreview();
+      onPhotoChange(null);
+    }
+  });
+
+  removeBtn.addEventListener('click', () => {
+    clearPreview();
+    onPhotoChange(null);
+  });
+
+  return {
+    set:   (dataUrl) => { if (dataUrl) showPreview(dataUrl); else clearPreview(); },
+    clear: ()        => clearPreview(),
+  };
 }
 
 // ============================================================
