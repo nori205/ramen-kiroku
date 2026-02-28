@@ -271,7 +271,7 @@ function renderCard(record) {
           ${record.wantToReturn ? '<span class="return-badge">また行きたい！</span>' : ''}
         </div>
         <div class="card-meta">
-          <span>📅 ${formatDate(record.date)}</span>
+          <span>📅 ${formatDate(record.date)}${record.time ? ` ${esc(record.time)}` : ''}</span>
           <span>📍 ${esc(record.prefecture || '')} ${esc(record.city || '')}</span>
         </div>
       </div>
@@ -448,6 +448,7 @@ function getFormData(p) {
 
   return {
     date: document.getElementById(`${p}-date`).value,
+    time: document.getElementById(`${p}-time`).value,
     prefecture: document.getElementById(`${p}-prefecture`).value,
     city: document.getElementById(`${p}-city`).value.trim(),
     shopName: document.getElementById(`${p}-shop-name`).value.trim(),
@@ -472,6 +473,7 @@ function openEditModal(id) {
   editingDocId = id;
 
   document.getElementById('e-date').value = record.date || '';
+  document.getElementById('e-time').value = record.time || '';
   document.getElementById('e-prefecture').value = record.prefecture || '';
   document.getElementById('e-city').value = record.city || '';
   document.getElementById('e-shop-name').value = record.shopName || '';
